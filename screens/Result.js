@@ -72,22 +72,35 @@ export default function Result({ route }) {
     await Sharing.shareAsync(after);
   };
 
-  // 🎥 AUTO SLIDER ANIMATION
+  // 🎥 AUTO SLIDER (IMPROVED LOOP)
   const autoSlide = () => {
-    Animated.timing(slider, {
-      toValue: 300,
-      duration: 2000,
-      useNativeDriver: false,
-    }).start(() => {
-      Animated.timing(slider, {
-        toValue: 0,
-        duration: 2000,
-        useNativeDriver: false,
-      }).start();
-    });
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(slider, {
+          toValue: 300,
+          duration: 1500,
+          useNativeDriver: false,
+        }),
+        Animated.timing(slider, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
   };
 
-  // ✨ MAGIC ENHANCE (UI ONLY FOR NOW)
+  // 🎬 RECORD REEL (NEW 🔥)
+  const recordReel = () => {
+    autoSlide();
+
+    Alert.alert(
+      "Record Reel 🎥",
+      "Screen recorder on pannitu indha animation ah record pannunga 😎"
+    );
+  };
+
+  // ✨ MAGIC ENHANCE
   const magicEnhance = () => {
     Alert.alert("Magic Enhance coming soon ✨");
   };
@@ -145,6 +158,10 @@ export default function Result({ route }) {
         
         <TouchableOpacity style={styles.btn} onPress={autoSlide}>
           <Text style={styles.btnText}>Auto Compare 🎥</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.btn} onPress={recordReel}>
+          <Text style={styles.btnText}>Record Reel 🎬</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.btn} onPress={magicEnhance}>
