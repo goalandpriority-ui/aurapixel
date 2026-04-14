@@ -5,7 +5,8 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from "react-native";
 import { useState } from "react";
 
@@ -13,6 +14,9 @@ import { useState } from "react";
 import { storage, db, auth } from "../lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+// 🔥 USAGE LIMIT
+import { checkUsage } from "../utils/usage";
 
 export default function Upload({ navigation }) {
   const [image, setImage] = useState(null);
@@ -33,13 +37,43 @@ export default function Upload({ navigation }) {
     }
   };
 
-  // ☁️ UPLOAD TO FIREBASE + SAVE HISTORY
+  // ☁️ UPLOAD TO FIREBASE + LIMIT CHECK
   const uploadToFirebase = async () => {
     try {
       const user = auth.currentUser;
 
       if (!user) {
         alert("Login pannunga first ⚠️");
+        return;
+      }
+
+      // 🔥 DAILY LIMIT CHECK
+      const usage = await checkUsage();
+
+      if (!usage.allowed) {
+        Alert.alert(
+          "Limit reached ⚠️",
+          "2 free uses mudinjiduchu!\n\nWatch Ad 🎥 or Upgrade 💎",
+          [
+            {
+              text: "Watch Ad 🎥",
+              onPress: () => {
+                // 🔥 future: show rewarded ad
+                alert("Ad system later connect pannuvom 😎");
+              },
+            },
+            {
+              text: "Go Premium 💎",
+              onPress: () => {
+                navigation.navigate("Profile");
+              },
+            },
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+          ]
+        );
         return;
       }
 
@@ -68,7 +102,7 @@ export default function Upload({ navigation }) {
 
       setLoading(false);
 
-      // 🚀 Move to Processing (same flow keep panniten)
+      // 🚀 Move to Processing
       navigation.navigate("Processing", {
         image: downloadURL,
         mode,
@@ -86,6 +120,11 @@ export default function Upload({ navigation }) {
 
       {/* TITLE */}
       <Text style={styles.title}>Upload Photo 📸</Text>
+
+      {/* LIMIT INFO */}
+      <Text style={styles.limitText}>
+        Free: 2 images/day ⚡ | Premium: Unlimited 💎
+      </Text>
 
       {/* MODE SELECT */}
       <View style={styles.modeRow}>
@@ -150,7 +189,12 @@ const styles = StyleSheet.create({
   title: {
     color: "#fff",
     fontSize: 18,
-    marginBottom: 20,
+    marginBottom: 10,
+  },
+  limitText: {
+    color: "#94a3b8",
+    marginBottom: 15,
+    fontSize: 12,
   },
   modeRow: {
     flexDirection: "row",
