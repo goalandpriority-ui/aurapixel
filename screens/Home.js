@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
 import * as Google from "expo-auth-session/providers/google";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
 import {
   signInWithCredential,
   GoogleAuthProvider,
@@ -9,8 +9,14 @@ import {
   signOut,
 } from "firebase/auth";
 
+import { doc, getDoc } from "firebase/firestore";
+
 export default function Home({ navigation }) {
   const [user, setUser] = useState(null);
+
+  // 🔥 NEW STATES
+  const [isPremium, setIsPremium] = useState(false);
+  const [dailyCount, setDailyCount] = useState(0);
 
   // 🔥 Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -32,10 +38,29 @@ export default function Home({ navigation }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
+
+      if (u) {
+        fetchUserData(u.uid);
+      }
     });
 
     return unsubscribe;
   }, []);
+
+  // 🔥 FETCH USER DATA (premium + usage)
+  const fetchUserData = async (uid) => {
+    try {
+      const snap = await getDoc(doc(db, "users", uid));
+
+      if (snap.exists()) {
+        const data = snap.data();
+        setIsPremium(data.isPremium || false);
+        setDailyCount(data.dailyCount || 0);
+      }
+    } catch (e) {
+      console.log("User fetch error:", e);
+    }
+  };
 
   // 🔥 Logout
   const handleLogout = () => {
@@ -55,6 +80,20 @@ export default function Home({ navigation }) {
         </Text>
       )}
 
+      {/* 💎 PREMIUM STATUS */}
+      {user && (
+        <Text style={{ color: isPremium ? "gold" : "#94a3b8", marginBottom: 5 }}>
+          {isPremium ? "Premium User 💎" : "Free User ⚡"}
+        </Text>
+      )}
+
+      {/* 🔢 DAILY USAGE */}
+      {user && !isPremium && (
+        <Text style={{ color: "#94a3b8", marginBottom: 15 }}>
+          Daily usage: {dailyCount}/2
+        </Text>
+      )}
+
       {/* TAGLINE */}
       <Text style={styles.sub}>
         Turn your photos into HD magic 🔥
@@ -71,7 +110,7 @@ export default function Home({ navigation }) {
         </TouchableOpacity>
       )}
 
-      {/* MAIN BUTTON */}
+      {/* MAIN FEATURES */}
       {user && (
         <>
           <TouchableOpacity
@@ -81,7 +120,6 @@ export default function Home({ navigation }) {
             <Text style={styles.btnText}>Upload Photo 📸</Text>
           </TouchableOpacity>
 
-          {/* SECOND BUTTON */}
           <TouchableOpacity
             style={styles.secondaryBtn}
             onPress={() => navigation.navigate("Upload")}
@@ -89,13 +127,32 @@ export default function Home({ navigation }) {
             <Text style={styles.btnText}>Quick Enhance ⚡</Text>
           </TouchableOpacity>
 
-          {/* HISTORY */}
           <TouchableOpacity
             style={styles.historyBtn}
             onPress={() => navigation.navigate("History")}
           >
             <Text style={styles.historyText}>View History 📂</Text>
           </TouchableOpacity>
+
+          {/* 👤 PROFILE */}
+          <TouchableOpacity
+            style={styles.profileBtn}
+            onPress={() => navigation.navigate("Profile")}
+          >
+            <Text style={styles.btnText}>Profile 👤</Text>
+          </TouchableOpacity>
+
+          {/* 💎 UPGRADE */}
+          {!isPremium && (
+            <TouchableOpacity
+              style={styles.premiumBtn}
+              onPress={() => navigation.navigate("Profile")}
+            >
+              <Text style={styles.btnText}>
+                Upgrade to Premium ₹99 💎
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {/* LOGOUT */}
           <TouchableOpacity
@@ -132,7 +189,7 @@ const styles = StyleSheet.create({
   },
   sub: {
     color: "#94a3b8",
-    marginBottom: 30,
+    marginBottom: 20,
     textAlign: "center",
     paddingHorizontal: 20,
   },
@@ -158,14 +215,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: 200,
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15,
   },
   historyBtn: {
-    marginTop: 10,
+    marginTop: 5,
   },
   historyText: {
     color: "#38bdf8",
     fontSize: 14,
+  },
+  profileBtn: {
+    backgroundColor: "#0ea5e9",
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 15,
+  },
+  premiumBtn: {
+    backgroundColor: "gold",
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 15,
   },
   logoutBtn: {
     backgroundColor: "#ef4444",
