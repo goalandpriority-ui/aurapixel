@@ -1,3 +1,5 @@
+// screens/Home.js
+
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
 import * as Google from "expo-auth-session/providers/google";
@@ -9,14 +11,15 @@ import {
   signOut,
 } from "firebase/auth";
 
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 export default function Home({ navigation }) {
   const [user, setUser] = useState(null);
 
-  // 🔥 NEW STATES
+  // 🔥 STATES
   const [isPremium, setIsPremium] = useState(false);
   const [dailyCount, setDailyCount] = useState(0);
+  const [loadingUser, setLoadingUser] = useState(true);
 
   // 🔥 Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -40,26 +43,30 @@ export default function Home({ navigation }) {
       setUser(u);
 
       if (u) {
-        fetchUserData(u.uid);
+        listenUserData(u.uid);
+      } else {
+        setIsPremium(false);
+        setDailyCount(0);
       }
+
+      setLoadingUser(false);
     });
 
     return unsubscribe;
   }, []);
 
-  // 🔥 FETCH USER DATA (premium + usage)
-  const fetchUserData = async (uid) => {
-    try {
-      const snap = await getDoc(doc(db, "users", uid));
+  // 🔥 REALTIME USER DATA (🔥 IMPORTANT UPGRADE)
+  const listenUserData = (uid) => {
+    const userRef = doc(db, "users", uid);
 
+    return onSnapshot(userRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
+
         setIsPremium(data.isPremium || false);
         setDailyCount(data.dailyCount || 0);
       }
-    } catch (e) {
-      console.log("User fetch error:", e);
-    }
+    });
   };
 
   // 🔥 Logout
@@ -73,6 +80,13 @@ export default function Home({ navigation }) {
       {/* APP NAME */}
       <Text style={styles.title}>AuraPixel ✨</Text>
 
+      {/* LOADING */}
+      {loadingUser && (
+        <Text style={{ color: "#94a3b8", marginBottom: 10 }}>
+          Loading user...
+        </Text>
+      )}
+
       {/* USER NAME */}
       {user && (
         <Text style={styles.user}>
@@ -82,7 +96,13 @@ export default function Home({ navigation }) {
 
       {/* 💎 PREMIUM STATUS */}
       {user && (
-        <Text style={{ color: isPremium ? "gold" : "#94a3b8", marginBottom: 5 }}>
+        <Text
+          style={{
+            color: isPremium ? "gold" : "#94a3b8",
+            marginBottom: 5,
+            fontWeight: "bold",
+          }}
+        >
           {isPremium ? "Premium User 💎" : "Free User ⚡"}
         </Text>
       )}
@@ -113,6 +133,7 @@ export default function Home({ navigation }) {
       {/* MAIN FEATURES */}
       {user && (
         <>
+          {/* UPLOAD */}
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate("Upload")}
@@ -120,6 +141,7 @@ export default function Home({ navigation }) {
             <Text style={styles.btnText}>Upload Photo 📸</Text>
           </TouchableOpacity>
 
+          {/* QUICK */}
           <TouchableOpacity
             style={styles.secondaryBtn}
             onPress={() => navigation.navigate("Upload")}
@@ -127,6 +149,7 @@ export default function Home({ navigation }) {
             <Text style={styles.btnText}>Quick Enhance ⚡</Text>
           </TouchableOpacity>
 
+          {/* HISTORY */}
           <TouchableOpacity
             style={styles.historyBtn}
             onPress={() => navigation.navigate("History")}
@@ -142,16 +165,23 @@ export default function Home({ navigation }) {
             <Text style={styles.btnText}>Profile 👤</Text>
           </TouchableOpacity>
 
-          {/* 💎 UPGRADE */}
+          {/* 💎 PREMIUM BUTTON */}
           {!isPremium && (
             <TouchableOpacity
               style={styles.premiumBtn}
-              onPress={() => navigation.navigate("Profile")}
+              onPress={() => navigation.navigate("Premium")}
             >
               <Text style={styles.btnText}>
                 Upgrade to Premium ₹99 💎
               </Text>
             </TouchableOpacity>
+          )}
+
+          {/* 🔓 ALREADY PREMIUM */}
+          {isPremium && (
+            <Text style={{ color: "gold", marginTop: 15 }}>
+              Unlimited Access Enabled 🚀
+            </Text>
           )}
 
           {/* LOGOUT */}
