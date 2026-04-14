@@ -8,13 +8,50 @@ import {
   Alert
 } from "react-native";
 
+// 🔥 FIREBASE
+import { auth, db } from "../lib/firebase";
+import { doc, updateDoc } from "firebase/firestore";
+
+// 💳 RAZORPAY
+import RazorpayCheckout from "react-native-razorpay";
+
 export default function Premium() {
 
-  // 💳 RAZORPAY PAYMENT (dummy for now)
+  // 💳 PAYMENT FUNCTION (REAL)
   const handlePayment = () => {
-    Alert.alert("Payment", "Razorpay integration varum 🔥");
-    
-    // 👉 Next step la real Razorpay add pannuvom
+    const user = auth.currentUser;
+
+    if (!user) {
+      Alert.alert("Error", "Login pannunga first ⚠️");
+      return;
+    }
+
+    const options = {
+      description: "AuraPixel Premium",
+      currency: "INR",
+      key: "YOUR_RAZORPAY_KEY_ID", // 🔑 replace after approval
+      amount: "9900", // ₹99 (paise)
+      name: "AuraPixel",
+      prefill: {
+        email: user.email,
+      },
+      theme: { color: "#7c3aed" },
+    };
+
+    RazorpayCheckout.open(options)
+      .then(async (data) => {
+        // ✅ SUCCESS
+        Alert.alert("Success 🎉", "Premium Activated 💎");
+
+        // 💎 FIREBASE UPDATE
+        await updateDoc(doc(db, "users", user.uid), {
+          isPremium: true,
+        });
+
+      })
+      .catch((error) => {
+        Alert.alert("Payment Failed ❌");
+      });
   };
 
   return (
@@ -53,7 +90,7 @@ export default function Premium() {
           onPress={handlePayment}
         >
           <Text style={styles.btnText}>
-            Buy Now 🚀
+            Buy Now ₹99 🚀
           </Text>
         </TouchableOpacity>
 
@@ -133,3 +170,4 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
+  
