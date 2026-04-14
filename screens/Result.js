@@ -1,26 +1,69 @@
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, PanResponder, Animated } from "react-native";
+import { useRef } from "react";
 
 export default function Result({ route }) {
   const { before, after } = route.params;
 
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: "#020617",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text style={{ color: "#fff", marginBottom: 20 }}>
-        Before
-      </Text>
-      <Image source={{ uri: before }} style={{ width: 250, height: 250 }} />
+  const slider = useRef(new Animated.Value(150)).current;
 
-      <Text style={{ color: "#fff", marginVertical: 20 }}>
-        After 🔥
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (evt, gestureState) => {
+        slider.setValue(gestureState.moveX);
+      },
+    })
+  ).current;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#020617", justifyContent: "center", alignItems: "center" }}>
+      
+      <Text style={{ color: "#fff", marginBottom: 20 }}>
+        Drag to Compare 🔥
       </Text>
-      <Image source={{ uri: after }} style={{ width: 250, height: 250 }} />
+
+      <View style={{ width: 300, height: 300 }}>
+        
+        {/* AFTER IMAGE (FULL) */}
+        <Image
+          source={{ uri: after }}
+          style={{
+            width: 300,
+            height: 300,
+            position: "absolute",
+          }}
+        />
+
+        {/* BEFORE IMAGE (CLIPPED) */}
+        <Animated.View
+          style={{
+            width: slider,
+            height: 300,
+            overflow: "hidden",
+          }}
+        >
+          <Image
+            source={{ uri: before }}
+            style={{
+              width: 300,
+              height: 300,
+            }}
+          />
+        </Animated.View>
+
+        {/* SLIDER LINE */}
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={{
+            position: "absolute",
+            left: slider,
+            width: 3,
+            height: 300,
+            backgroundColor: "#7c3aed",
+          }}
+        />
+      </View>
+
     </View>
   );
 }
