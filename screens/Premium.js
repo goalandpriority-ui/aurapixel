@@ -17,7 +17,7 @@ import RazorpayCheckout from "react-native-razorpay";
 
 export default function Premium() {
 
-  // 💳 PAYMENT FUNCTION (REAL)
+  // 💳 PAYMENT FUNCTION (SECURE FLOW)
   const handlePayment = () => {
     const user = auth.currentUser;
 
@@ -29,8 +29,8 @@ export default function Premium() {
     const options = {
       description: "AuraPixel Premium",
       currency: "INR",
-      key: "YOUR_RAZORPAY_KEY_ID", // 🔑 replace after approval
-      amount: "9900", // ₹99 (paise)
+      key: "YOUR_RAZORPAY_KEY_ID", // 🔑 replace later
+      amount: "9900", // ₹99
       name: "AuraPixel",
       prefill: {
         email: user.email,
@@ -40,13 +40,34 @@ export default function Premium() {
 
     RazorpayCheckout.open(options)
       .then(async (data) => {
-        // ✅ SUCCESS
-        Alert.alert("Success 🎉", "Premium Activated 💎");
 
-        // 💎 FIREBASE UPDATE
-        await updateDoc(doc(db, "users", user.uid), {
-          isPremium: true,
-        });
+        try {
+          // 🔐 BACKEND VERIFY
+          const response = await fetch("http://YOUR_SERVER_IP:3000/verify-payment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            // 💎 UNLOCK PREMIUM
+            await updateDoc(doc(db, "users", user.uid), {
+              isPremium: true,
+            });
+
+            Alert.alert("Success 🎉", "Premium Activated 💎🔥");
+          } else {
+            Alert.alert("Verification failed ❌");
+          }
+
+        } catch (err) {
+          console.log("Verify error:", err);
+          Alert.alert("Server error ❌");
+        }
 
       })
       .catch((error) => {
@@ -96,7 +117,7 @@ export default function Premium() {
 
       </View>
 
-      {/* BACK */}
+      {/* NOTE */}
       <Text style={styles.note}>
         Cancel anytime 💡
       </Text>
@@ -170,4 +191,3 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
-  
