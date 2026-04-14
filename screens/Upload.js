@@ -4,24 +4,80 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  StyleSheet
+  StyleSheet,
+  ActivityIndicator
 } from "react-native";
 import { useState } from "react";
 
+// 🔥 FIREBASE
+import { storage, db, auth } from "../lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
 export default function Upload({ navigation }) {
   const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // 😎 MODE (FULL / FACE)
   const [mode, setMode] = useState("full");
 
+  // 📸 PICK IMAGE
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.5,
+      quality: 0.7,
     });
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
+    }
+  };
+
+  // ☁️ UPLOAD TO FIREBASE + SAVE HISTORY
+  const uploadToFirebase = async () => {
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        alert("Login pannunga first ⚠️");
+        return;
+      }
+
+      setLoading(true);
+
+      const response = await fetch(image);
+      const blob = await response.blob();
+
+      const filename = Date.now() + ".jpg";
+
+      const storageRef = ref(storage, `images/${user.uid}/${filename}`);
+
+      // 🔥 Upload
+      await uploadBytes(storageRef, blob);
+
+      // 🔗 URL
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // 📝 Firestore history
+      await addDoc(collection(db, "history"), {
+        userId: user.uid,
+        image: downloadURL,
+        mode: mode,
+        createdAt: serverTimestamp(),
+      });
+
+      setLoading(false);
+
+      // 🚀 Move to Processing (same flow keep panniten)
+      navigation.navigate("Processing", {
+        image: downloadURL,
+        mode,
+      });
+
+    } catch (e) {
+      console.log("Upload error:", e);
+      setLoading(false);
+      alert("Upload fail aachu ❌");
     }
   };
 
@@ -58,21 +114,27 @@ export default function Upload({ navigation }) {
       {/* IMAGE PREVIEW */}
       {image && (
         <>
-          <Image
-            source={{ uri: image }}
-            style={styles.preview}
-          />
+          <Image source={{ uri: image }} style={styles.preview} />
 
+          {/* ENHANCE BUTTON */}
           <TouchableOpacity
             style={styles.enhanceBtn}
-            onPress={() =>
-              navigation.navigate("Processing", { image, mode })
-            }
+            onPress={uploadToFirebase}
           >
-            <Text style={styles.btnText}>Enhance Image 🔥</Text>
+            <Text style={styles.btnText}>Upload & Enhance 🔥</Text>
           </TouchableOpacity>
         </>
       )}
+
+      {/* LOADING */}
+      {loading && (
+        <ActivityIndicator
+          size="large"
+          color="#7c3aed"
+          style={{ marginTop: 20 }}
+        />
+      )}
+
     </View>
   );
 }
