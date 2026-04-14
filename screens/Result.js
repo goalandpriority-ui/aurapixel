@@ -1,15 +1,26 @@
 import { View, Text, Image } from "react-native";
 
 export default function Result({ route }) {
-  const { image } = route.params;
+  const { before, after } = route.params;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#020617", alignItems: "center", justifyContent: "center" }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: "#020617",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <Text style={{ color: "#fff", marginBottom: 20 }}>
-        Your Enhanced Photo 🔥
+        Before
       </Text>
+      <Image source={{ uri: before }} style={{ width: 250, height: 250 }} />
 
-      <Image source={{ uri: image }} style={{ width: 300, height: 300 }} />
+      <Text style={{ color: "#fff", marginVertical: 20 }}>
+        After 🔥
+      </Text>
+      <Image source={{ uri: after }} style={{ width: 250, height: 250 }} />
     </View>
   );
 }
