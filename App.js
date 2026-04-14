@@ -1,11 +1,12 @@
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 
+import Login from "./screens/Login"; // 🆕 added
 import Home from "./screens/Home";
 import Upload from "./screens/Upload";
 import Processing from "./screens/Processing";
 import Result from "./screens/Result";
-import History from "./screens/History"; // 🆕 added
+import History from "./screens/History"; // 🆕 already
 
 const Stack = createStackNavigator();
 
@@ -30,11 +31,14 @@ export default function App() {
           animationEnabled: true, // 🔥 smooth transition
         }}
       >
+        {/* 🆕 FIRST SCREEN LOGIN */}
+        <Stack.Screen name="Login" component={Login} />
+
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Upload" component={Upload} />
         <Stack.Screen name="Processing" component={Processing} />
         <Stack.Screen name="Result" component={Result} />
-        <Stack.Screen name="History" component={History} /> {/* 🆕 */}
+        <Stack.Screen name="History" component={History} />
       </Stack.Navigator>
     </NavigationContainer>
   );
