@@ -7,13 +7,15 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Alert
 } from "react-native";
 import { useRef, useState } from "react";
+import * as MediaLibrary from "expo-media-library";
+import * as Sharing from "expo-sharing";
 
 export default function Result({ route }) {
   const { before, after } = route.params;
 
-  // 🔥 SLIDER
   const slider = useRef(new Animated.Value(150)).current;
 
   const panResponder = useRef(
@@ -21,20 +23,15 @@ export default function Result({ route }) {
       onMoveShouldSetPanResponder: () => true,
       onPanResponderMove: (evt, gestureState) => {
         let x = gestureState.moveX;
-
-        // LIMIT inside image
         if (x < 0) x = 0;
         if (x > 300) x = 300;
-
         slider.setValue(x);
       },
     })
   ).current;
 
-  // 🎨 FILTER STATE
   const [filter, setFilter] = useState("none");
 
-  // 🎯 FILTER STYLE
   const getFilterStyle = () => {
     switch (filter) {
       case "warm":
@@ -50,77 +47,84 @@ export default function Result({ route }) {
     }
   };
 
+  // 📥 DOWNLOAD FUNCTION
+  const downloadImage = async () => {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert("Permission required");
+      return;
+    }
+
+    const asset = await MediaLibrary.createAssetAsync(after);
+    await MediaLibrary.createAlbumAsync("AuraPixel", asset, false);
+
+    Alert.alert("Downloaded 🔥");
+  };
+
+  // 📤 SHARE FUNCTION
+  const shareImage = async () => {
+    if (!(await Sharing.isAvailableAsync())) {
+      Alert.alert("Sharing not available");
+      return;
+    }
+
+    await Sharing.shareAsync(after);
+  };
+
   return (
     <View style={styles.container}>
       
       <Text style={styles.title}>Drag to Compare 🔥</Text>
 
-      {/* IMAGE COMPARE */}
       <View style={styles.imageBox}>
         
-        {/* AFTER IMAGE */}
-        <Image
-          source={{ uri: after }}
-          style={styles.image}
-        />
+        <Image source={{ uri: after }} style={styles.image} />
 
-        {/* BEFORE IMAGE */}
-        <Animated.View
-          style={{
-            width: slider,
-            height: 300,
-            overflow: "hidden",
-          }}
-        >
-          <Image
-            source={{ uri: before }}
-            style={styles.image}
-          />
+        <Animated.View style={{ width: slider, height: 300, overflow: "hidden" }}>
+          <Image source={{ uri: before }} style={styles.image} />
         </Animated.View>
 
-        {/* SLIDER LINE */}
         <Animated.View
           {...panResponder.panHandlers}
-          style={[
-            styles.sliderLine,
-            { left: slider }
-          ]}
+          style={[styles.sliderLine, { left: slider }]}
         />
 
-        {/* SLIDER HANDLE */}
         <Animated.View
-          style={[
-            styles.handle,
-            { left: slider }
-          ]}
+          style={[styles.handle, { left: slider }]}
         />
       </View>
 
-      {/* FILTER TITLE */}
       <Text style={styles.filterTitle}>Filters 🎨</Text>
 
-      {/* FILTER LIST */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        
         <FilterBtn title="Normal" onPress={() => setFilter("none")} active={filter==="none"} />
         <FilterBtn title="Warm" onPress={() => setFilter("warm")} active={filter==="warm"} />
         <FilterBtn title="Gold" onPress={() => setFilter("gold")} active={filter==="gold"} />
         <FilterBtn title="B&W" onPress={() => setFilter("bw")} active={filter==="bw"} />
         <FilterBtn title="Contrast" onPress={() => setFilter("contrast")} active={filter==="contrast"} />
-
       </ScrollView>
 
-      {/* FILTER PREVIEW */}
-      <Image
-        source={{ uri: after }}
-        style={[styles.preview, getFilterStyle()]}
-      />
+      <Image source={{ uri: after }} style={[styles.preview, getFilterStyle()]} />
+
+      {/* 🔥 ACTION BUTTONS */}
+      <View style={{ flexDirection: "row", marginTop: 20 }}>
+        
+        <TouchableOpacity style={styles.btn} onPress={downloadImage}>
+          <Text style={styles.btnText}>Download ⬇️</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.btn} onPress={shareImage}>
+          <Text style={styles.btnText}>Share 📤</Text>
+        </TouchableOpacity>
+
+      </View>
 
     </View>
   );
 }
 
-/* 🔥 FILTER BUTTON COMPONENT */
+/* FILTER BUTTON */
 const FilterBtn = ({ title, onPress, active }) => (
   <TouchableOpacity
     onPress={onPress}
@@ -135,7 +139,7 @@ const FilterBtn = ({ title, onPress, active }) => (
   </TouchableOpacity>
 );
 
-/* 🎨 STYLES */
+/* STYLES */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -146,7 +150,6 @@ const styles = StyleSheet.create({
   title: {
     color: "#fff",
     marginBottom: 20,
-    fontSize: 16,
   },
   imageBox: {
     width: 300,
@@ -175,12 +178,20 @@ const styles = StyleSheet.create({
   filterTitle: {
     color: "#fff",
     marginTop: 30,
-    marginBottom: 10,
   },
   preview: {
     width: 200,
     height: 200,
     marginTop: 20,
     borderRadius: 10,
+  },
+  btn: {
+    backgroundColor: "#7c3aed",
+    padding: 12,
+    margin: 10,
+    borderRadius: 10,
+  },
+  btnText: {
+    color: "#fff",
   },
 });
