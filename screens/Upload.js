@@ -15,8 +15,11 @@ import { storage, db, auth } from "../lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-// 🔥 USAGE LIMIT
-import { checkUsage } from "../utils/usage";
+// 🔥 NEW PREMIUM SYSTEM
+import {
+  checkUsageLimit,
+  incrementUsage
+} from "../lib/premium";
 
 export default function Upload({ navigation }) {
   const [image, setImage] = useState(null);
@@ -37,7 +40,7 @@ export default function Upload({ navigation }) {
     }
   };
 
-  // ☁️ UPLOAD TO FIREBASE + LIMIT CHECK
+  // ☁️ UPLOAD + PREMIUM LOGIC
   const uploadToFirebase = async () => {
     try {
       const user = auth.currentUser;
@@ -47,10 +50,10 @@ export default function Upload({ navigation }) {
         return;
       }
 
-      // 🔥 DAILY LIMIT CHECK
-      const usage = await checkUsage();
+      // 🔥 CHECK LIMIT (NEW SYSTEM)
+      const { allowed } = await checkUsageLimit(user.uid);
 
-      if (!usage.allowed) {
+      if (!allowed) {
         Alert.alert(
           "Limit reached ⚠️",
           "2 free uses mudinjiduchu!\n\nWatch Ad 🎥 or Upgrade 💎",
@@ -58,14 +61,13 @@ export default function Upload({ navigation }) {
             {
               text: "Watch Ad 🎥",
               onPress: () => {
-                // 🔥 future: show rewarded ad
-                alert("Ad system later connect pannuvom 😎");
+                alert("Ad system next step la connect pannuvom 😎");
               },
             },
             {
               text: "Go Premium 💎",
               onPress: () => {
-                navigation.navigate("Profile");
+                navigation.navigate("Premium");
               },
             },
             {
@@ -92,13 +94,16 @@ export default function Upload({ navigation }) {
       // 🔗 URL
       const downloadURL = await getDownloadURL(storageRef);
 
-      // 📝 Firestore history
+      // 📝 Save history
       await addDoc(collection(db, "history"), {
         userId: user.uid,
         image: downloadURL,
         mode: mode,
         createdAt: serverTimestamp(),
       });
+
+      // ➕ INCREMENT USAGE
+      await incrementUsage(user.uid);
 
       setLoading(false);
 
