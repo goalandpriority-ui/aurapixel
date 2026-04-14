@@ -4,15 +4,24 @@ import {
   FlatList,
   Image,
   StyleSheet,
+  TouchableOpacity,
   ActivityIndicator
 } from "react-native";
 import { useEffect, useState } from "react";
 
 // 🔥 FIREBASE
 import { db, auth } from "../lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  deleteDoc,
+  doc
+} from "firebase/firestore";
 
-export default function History() {
+export default function History({ navigation }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +38,6 @@ export default function History() {
         return;
       }
 
-      // 🔥 Query user history
       const q = query(
         collection(db, "history"),
         where("userId", "==", user.uid),
@@ -38,7 +46,7 @@ export default function History() {
 
       const snapshot = await getDocs(q);
 
-      const list = snapshot.docs.map(doc => ({
+      const list = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
@@ -52,9 +60,15 @@ export default function History() {
     }
   };
 
+  // 🗑️ DELETE
+  const deleteImage = async (id) => {
+    await deleteDoc(doc(db, "history", id));
+    fetchHistory();
+  };
+
   return (
     <View style={styles.container}>
-      
+
       <Text style={styles.title}>Your History 📂</Text>
 
       {/* LOADING */}
@@ -71,15 +85,34 @@ export default function History() {
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 30 }}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            
-            <Image source={{ uri: item.image }} style={styles.img} />
 
+            {/* 🔁 CLICK → RESULT */}
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("Result", {
+                  before: item.image,
+                  after: item.image,
+                })
+              }
+            >
+              <Image source={{ uri: item.image }} style={styles.img} />
+            </TouchableOpacity>
+
+            {/* MODE */}
             <Text style={styles.mode}>
               Mode: {item.mode === "face" ? "Face 😎" : "Full"}
             </Text>
+
+            {/* DELETE */}
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={() => deleteImage(item.id)}
+            >
+              <Text style={{ color: "#fff" }}>Delete 🗑️</Text>
+            </TouchableOpacity>
 
           </View>
         )}
@@ -108,7 +141,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   card: {
-    marginBottom: 15,
+    marginBottom: 20,
     alignItems: "center",
   },
   img: {
@@ -119,5 +152,11 @@ const styles = StyleSheet.create({
   mode: {
     color: "#22c55e",
     marginTop: 5,
+  },
+  deleteBtn: {
+    marginTop: 10,
+    backgroundColor: "#ef4444",
+    padding: 8,
+    borderRadius: 8,
   },
 });
