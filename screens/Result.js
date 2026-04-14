@@ -57,9 +57,9 @@ export default function Result({ route }) {
     }
 
     const asset = await MediaLibrary.createAssetAsync(after);
-    await MediaLibrary.createAlbumAsync("AuraPixel", asset, false);
+    await MediaLibrary.createAlbumAsync("AuraPixel HD", asset, false);
 
-    Alert.alert("Downloaded 🔥");
+    Alert.alert("HD Image Saved 🔥");
   };
 
   // 📤 SHARE FUNCTION
@@ -70,6 +70,26 @@ export default function Result({ route }) {
     }
 
     await Sharing.shareAsync(after);
+  };
+
+  // 🎥 AUTO SLIDER ANIMATION
+  const autoSlide = () => {
+    Animated.timing(slider, {
+      toValue: 300,
+      duration: 2000,
+      useNativeDriver: false,
+    }).start(() => {
+      Animated.timing(slider, {
+        toValue: 0,
+        duration: 2000,
+        useNativeDriver: false,
+      }).start();
+    });
+  };
+
+  // ✨ MAGIC ENHANCE (UI ONLY FOR NOW)
+  const magicEnhance = () => {
+    Alert.alert("Magic Enhance coming soon ✨");
   };
 
   return (
@@ -116,6 +136,19 @@ export default function Result({ route }) {
 
         <TouchableOpacity style={styles.btn} onPress={shareImage}>
           <Text style={styles.btnText}>Share 📤</Text>
+        </TouchableOpacity>
+
+      </View>
+
+      {/* 🔥 EXTRA FEATURES */}
+      <View style={{ flexDirection: "row", marginTop: 10 }}>
+        
+        <TouchableOpacity style={styles.btn} onPress={autoSlide}>
+          <Text style={styles.btnText}>Auto Compare 🎥</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.btn} onPress={magicEnhance}>
+          <Text style={styles.btnText}>Magic Enhance ✨</Text>
         </TouchableOpacity>
 
       </View>
