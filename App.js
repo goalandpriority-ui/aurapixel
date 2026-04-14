@@ -1,12 +1,18 @@
+// App.js
+
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 
-import Login from "./screens/Login"; // 🆕 added
+import Login from "./screens/Login";
 import Home from "./screens/Home";
 import Upload from "./screens/Upload";
 import Processing from "./screens/Processing";
 import Result from "./screens/Result";
-import History from "./screens/History"; // 🆕 already
+import History from "./screens/History";
+
+// 🔥 NEW SCREENS
+import Premium from "./screens/Premium";
+import Profile from "./screens/Profile";
 
 const Stack = createStackNavigator();
 
@@ -28,17 +34,29 @@ export default function App() {
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          animationEnabled: true, // 🔥 smooth transition
+          animationEnabled: true,
         }}
       >
-        {/* 🆕 FIRST SCREEN LOGIN */}
+        {/* 🔐 LOGIN */}
         <Stack.Screen name="Login" component={Login} />
 
+        {/* 🏠 MAIN */}
         <Stack.Screen name="Home" component={Home} />
+
+        {/* 📸 FEATURES */}
         <Stack.Screen name="Upload" component={Upload} />
         <Stack.Screen name="Processing" component={Processing} />
         <Stack.Screen name="Result" component={Result} />
+
+        {/* 📂 HISTORY */}
         <Stack.Screen name="History" component={History} />
+
+        {/* 👤 PROFILE */}
+        <Stack.Screen name="Profile" component={Profile} />
+
+        {/* 💎 PREMIUM */}
+        <Stack.Screen name="Premium" component={Premium} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
